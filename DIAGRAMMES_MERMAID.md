@@ -1,6 +1,6 @@
 # Diagrammes Mermaid complets et valides
 
-## Diagramme de classes (ultra détaillé)
+## Diagramme de classes 
 ```mermaid
 classDiagram
     class Anime {
@@ -89,7 +89,7 @@ sequenceDiagram
     F-->>U: Affiche la mise à jour
 ```
 
-## Diagramme d'architecture / composants (ultra détaillé)
+## Diagramme d'architecture / composants 
 ```mermaid
 flowchart TD
     Frontend("dashboard.html / seiyuus.html / studios.html")
@@ -197,11 +197,11 @@ flowchart TD
 ## Diagramme d'état (états de visionnage)
 ```mermaid
 stateDiagram-v2
-    [*] --> Wishlist : Add
-    Wishlist --> Watching : Start
-    Watching --> Completed : Finish
-    Completed --> Watching : Rewatch
-    Watching --> Wishlist : Pause
+    [*] --> Wishlist : Ajout
+    Wishlist --> EnCours : Début
+    EnCours --> Fini : Fin
+    Fini --> EnCours : Revoir
+    EnCours --> Wishlist : Pause
 ```
 
 ## Diagramme de déploiement
