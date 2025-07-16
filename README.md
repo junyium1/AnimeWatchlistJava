@@ -8,13 +8,7 @@
 
 ## Lancer l’application avec Docker
 
-1. **Cloner le dépôt** (si ce n’est pas déjà fait) :
-   ```bash
-   git clone <url-du-repo>
-   cd AnimeWatchlistJava
-   ```
-
-2. **Construire et démarrer les conteneurs** :
+1. **Construire et démarrer les conteneurs** :
    ```bash
    docker-compose up --build
    ```
@@ -23,7 +17,7 @@
    - Lancer l’API et la base de données (si configurée dans le docker-compose)
    - Exposer l’API sur le port défini (par défaut : `http://localhost:26550`)
 
-3. **Vérifier que l’API est en ligne** :
+2. **Vérifier que l’API est en ligne** :
    - Accédez à [http://localhost:26550/api/animes](http://localhost:26550/api/animes) dans votre navigateur ou via Postman/curl.
    - Vous devriez obtenir une liste (éventuellement vide) d’animes au format JSON.
 
