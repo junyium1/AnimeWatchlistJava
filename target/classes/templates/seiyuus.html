@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Seiyuus</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Gestionnaire d'Anime</h1>
+            <nav>
+                <a href="/dashboard">Animes</a>
+                <a href="/seiyuus">Seiyuus</a>
+                <a href="/studios">Studios</a>
+                <a href="/api/seiyuus">API</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Gestion des Seiyuus</h2>
+            <button class="primary" onclick="ouvrirModalAjout()">Ajouter un seiyuu</button>
+        </div>
+        
+        <div class="search-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Rechercher un seiyuu..." onkeyup="rechercherSeiyuu()">
+                <select id="searchType" onchange="rechercherSeiyuu()">
+                    <option value="nom">Nom</option>
+                    <option value="japonais">Nom japonais</option>
+                    <option value="agence">Agence</option>
+                </select>
+            </div>
+            <div class="filter-buttons">
+            </div>
+        </div>
+        
+        <div class="seiyuu-grid" id="seiyuuGrid">
+            <p>Chargement des seiyuus...</p>
+        </div>
+        
+        <!-- Suppression de la section Analyse des Collaborations -->
+    </main>
+
+    <!-- Modal pour ajouter/modifier un seiyuu -->
+    <div id="seiyuuModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Ajouter un seiyuu</h3>
+                <button class="close" onclick="fermerModal()">&times;</button>
+            </div>
+            <form id="seiyuuForm">
+                <input type="hidden" id="seiyuuId">
+                
+                <div class="form-group">
+                    <label for="nom">Nom *</label>
+                    <input type="text" id="nom" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="prenom">Prénom *</label>
+                    <input type="text" id="prenom" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nomJaponais">Nom japonais</label>
+                    <input type="text" id="nomJaponais">
+                </div>
+                
+                <div class="form-group">
+                    <label for="dateNaissance">Date de naissance</label>
+                    <input type="date" id="dateNaissance">
+                </div>
+                
+                <div class="form-group">
+                    <label for="lieuNaissance">Lieu de naissance</label>
+                    <input type="text" id="lieuNaissance">
+                </div>
+                
+                <div class="form-group">
+                    <label for="biographie">Biographie</label>
+                    <textarea id="biographie" rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="agence">Agence</label>
+                    <input type="text" id="agence">
+                </div>
+                
+                <div class="form-group">
+                    <label for="site">Site web</label>
+                    <input type="url" id="site">
+                </div>
+                
+                <div class="form-group">
+                    <label for="urlImage">URL de l'image</label>
+                    <input type="url" id="urlImage">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="primary">Sauvegarder</button>
+                    <button type="button" class="btn-secondary" onclick="fermerModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let seiyuus = [];
+        let editingSeiyuuId = null;
+        
+        // Charger les seiyuus via l'API
+        async function chargerSeiyuus() {
+            try {
+                const response = await fetch('/api/seiyuus');
+                seiyuus = await response.json();
+                afficherSeiyuus();
+                // Suppression des fonctions JS associées à l'analyse des collaborations
+            } catch (error) {
+                console.error('Erreur lors du chargement des seiyuus:', error);
+                document.getElementById('seiyuuGrid').innerHTML = '<p>Erreur lors du chargement des seiyuus.</p>';
+            }
+        }
+        
+        function afficherSeiyuus(seiyuusAfficher = seiyuus) {
+            const grid = document.getElementById('seiyuuGrid');
+            
+            if (seiyuusAfficher.length === 0) {
+                grid.innerHTML = '<p>Aucun seiyuu trouvé. <a href="#" onclick="ouvrirModalAjout()">Ajouter le premier seiyuu</a></p>';
+                return;
+            }
+            
+            grid.innerHTML = seiyuusAfficher.map(seiyuu => `
+                <div class="anime-card">
+                    <div class="anime-card-image ${seiyuu.urlImage ? '' : 'no-image'}">
+                        ${seiyuu.urlImage ? 
+                            `<img src="${seiyuu.urlImage}" alt="${seiyuu.nomComplet}" onerror="this.parentElement.innerHTML='<div>Image non disponible</div>'; this.parentElement.classList.add('no-image');">` : 
+                            '<div>Aucune image</div>'
+                        }
+                    </div>
+                    <div class="anime-card-content">
+                        <h3>${seiyuu.nomComplet}</h3>
+                        ${seiyuu.nomJaponais ? `<p class="synopsis">${seiyuu.nomJaponais}</p>` : ''}
+                        ${seiyuu.dateNaissance ? `<p><strong>Né le:</strong> ${new Date(seiyuu.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
+                        ${seiyuu.lieuNaissance ? `<p><strong>Lieu:</strong> ${seiyuu.lieuNaissance}</p>` : ''}
+                        ${seiyuu.agence ? `<p><strong>Agence:</strong> ${seiyuu.agence}</p>` : ''}
+                        ${seiyuu.biographie ? `<p class="synopsis">${seiyuu.biographie.length > 100 ? seiyuu.biographie.substring(0, 100) + '...' : seiyuu.biographie}</p>` : ''}
+                        <div class="actions">
+                            <button onclick="modifierSeiyuu(${seiyuu.id})" class="btn-edit">Modifier</button>
+                            <button onclick="supprimerSeiyuu(${seiyuu.id})" class="btn-delete">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function remplirSelectsCollaboration() {
+            const select1 = document.getElementById('seiyuu1Select');
+            const select2 = document.getElementById('seiyuu2Select');
+            
+            const options = seiyuus.map(s => `<option value="${s.id}">${s.nomComplet}</option>`).join('');
+            select1.innerHTML = '<option value="">Sélectionner premier seiyuu</option>' + options;
+            select2.innerHTML = '<option value="">Sélectionner second seiyuu</option>' + options;
+        }
+        
+        async function rechercherSeiyuu() {
+            const terme = document.getElementById('searchInput').value.trim();
+            const type = document.getElementById('searchType').value;
+            
+            if (!terme) {
+                afficherSeiyuus();
+                return;
+            }
+            
+            try {
+                let url;
+                switch (type) {
+                    case 'nom':
+                        url = `/api/seiyuus/recherche?nom=${encodeURIComponent(terme)}`;
+                        break;
+                    case 'japonais':
+                        url = `/api/seiyuus/recherche-japonais?nomJaponais=${encodeURIComponent(terme)}`;
+                        break;
+                    case 'agence':
+                        url = `/api/seiyuus/agence/${encodeURIComponent(terme)}`;
+                        break;
+                }
+                
+                const response = await fetch(url);
+                const resultats = await response.json();
+                afficherSeiyuus(resultats);
+            } catch (error) {
+                console.error('Erreur lors de la recherche:', error);
+            }
+        }
+        
+        async function afficherSeiyuusLesPlusActifs() {
+            try {
+                const response = await fetch('/api/seiyuus/plus-actifs');
+                const seiyuusActifs = await response.json();
+                afficherSeiyuus(seiyuusActifs);
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+        
+        function afficherTousLesSeiyuus() {
+            document.getElementById('searchInput').value = '';
+            afficherSeiyuus();
+        }
+        
+        async function voirCollaborateurs(seiyuuId) {
+            try {
+                const response = await fetch(`/api/seiyuus/${seiyuuId}/collaborateurs`);
+                const collaborateurs = await response.json();
+                
+                if (collaborateurs.length === 0) {
+                    alert('Aucun collaborateur trouvé pour ce seiyuu.');
+                    return;
+                }
+                
+                const noms = collaborateurs.map(c => c.nomComplet).join(', ');
+                alert(`Collaborateurs: ${noms}`);
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la récupération des collaborateurs.');
+            }
+        }
+        
+        // Suppression des fonctions JS associées à l'analyse des collaborations
+        
+        function ouvrirModalAjout() {
+            editingSeiyuuId = null;
+            document.getElementById('modalTitle').textContent = 'Ajouter un seiyuu';
+            document.getElementById('seiyuuForm').reset();
+            document.getElementById('seiyuuId').value = '';
+            document.getElementById('seiyuuModal').classList.add('show');
+        }
+        
+        function modifierSeiyuu(id) {
+            const seiyuu = seiyuus.find(s => s.id === id);
+            if (!seiyuu) return;
+            
+            editingSeiyuuId = id;
+            document.getElementById('modalTitle').textContent = 'Modifier un seiyuu';
+            
+            // Remplir le formulaire
+            document.getElementById('seiyuuId').value = seiyuu.id;
+            document.getElementById('nom').value = seiyuu.nom || '';
+            document.getElementById('prenom').value = seiyuu.prenom || '';
+            document.getElementById('nomJaponais').value = seiyuu.nomJaponais || '';
+            document.getElementById('dateNaissance').value = seiyuu.dateNaissance || '';
+            document.getElementById('lieuNaissance').value = seiyuu.lieuNaissance || '';
+            document.getElementById('biographie').value = seiyuu.biographie || '';
+            document.getElementById('agence').value = seiyuu.agence || '';
+            document.getElementById('site').value = seiyuu.site || '';
+            document.getElementById('urlImage').value = seiyuu.urlImage || '';
+            
+            document.getElementById('seiyuuModal').classList.add('show');
+        }
+        
+        function fermerModal() {
+            document.getElementById('seiyuuModal').classList.remove('show');
+        }
+        
+        async function supprimerSeiyuu(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce seiyuu ?')) return;
+            
+            try {
+                const response = await fetch(`/api/seiyuus/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    await chargerSeiyuus();
+                    alert('Seiyuu supprimé avec succès !');
+                } else {
+                    alert('Erreur lors de la suppression du seiyuu.');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la suppression du seiyuu.');
+            }
+        }
+        
+        // Gestion du formulaire
+        document.getElementById('seiyuuForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const seiyuu = {
+                nom: document.getElementById('nom').value,
+                prenom: document.getElementById('prenom').value,
+                nomJaponais: document.getElementById('nomJaponais').value || null,
+                dateNaissance: document.getElementById('dateNaissance').value || null,
+                lieuNaissance: document.getElementById('lieuNaissance').value || null,
+                biographie: document.getElementById('biographie').value || null,
+                agence: document.getElementById('agence').value || null,
+                site: document.getElementById('site').value || null,
+                urlImage: document.getElementById('urlImage').value || null
+            };
+            
+            try {
+                let response;
+                if (editingSeiyuuId) {
+                    // Modification
+                    response = await fetch(`/api/seiyuus/${editingSeiyuuId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(seiyuu)
+                    });
+                } else {
+                    // Ajout
+                    response = await fetch('/api/seiyuus', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(seiyuu)
+                    });
+                }
+                
+                if (response.ok) {
+                    await chargerSeiyuus();
+                    fermerModal();
+                    alert(editingSeiyuuId ? 'Seiyuu modifié avec succès !' : 'Seiyuu ajouté avec succès !');
+                } else {
+                    alert('Erreur lors de la sauvegarde du seiyuu.');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la sauvegarde du seiyuu.');
+            }
+        });
+        
+        // Fermer le modal en cliquant à l'extérieur
+        document.getElementById('seiyuuModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                fermerModal();
+            }
+        });
+        
+        // Charger les seiyuus au chargement de la page
+        document.addEventListener('DOMContentLoaded', chargerSeiyuus);
+    </script>
+</body>
+</html> 

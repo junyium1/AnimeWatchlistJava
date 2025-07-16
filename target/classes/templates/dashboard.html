@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire d'Anime</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Gestionnaire d'Anime</h1>
+            <nav>
+                <a href="/dashboard">Animes</a>
+                <a href="/seiyuus">Seiyuus</a>
+                <a href="/studios">Studios</a>
+                <a href="/api/animes">API</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Ma Watchlist</h2>
+            <button class="primary" onclick="ouvrirModalAjout()">Ajouter un anime</button>
+        </div>
+        
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        
+        <div class="anime-grid" id="watchlistGrid">
+            <p>Chargement des animes...</p>
+        </div>
+        <hr style="margin: 40px 0;">
+        <div class="dashboard-header">
+            <h2>Ma Wishlist</h2>
+        </div>
+        <div class="anime-grid" id="wishlistGrid">
+            <p>Chargement des animes...</p>
+        </div>
+    </main>
+
+    <!-- Modal pour ajouter/modifier un anime -->
+    <div id="animeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Ajouter un anime</h3>
+                <button class="close" onclick="fermerModal()">&times;</button>
+            </div>
+            <form id="animeForm">
+                <input type="hidden" id="animeId">
+                
+                <div class="form-group">
+                    <label for="titre">Titre *</label>
+                    <input type="text" id="titre" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="synopsis">Synopsis</label>
+                    <textarea id="synopsis" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="annee">Année</label>
+                    <input type="number" id="annee" min="1900" max="2030">
+                </div>
+                
+                <div class="form-group">
+                    <label for="saison">Saison</label>
+                    <select id="saison">
+                        <option value="">Sélectionner</option>
+                        <option value="Hiver">Hiver</option>
+                        <option value="Printemps">Printemps</option>
+                        <option value="Été">Été</option>
+                        <option value="Automne">Automne</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nombreEpisodes">Nombre d'épisodes</label>
+                    <input type="number" id="nombreEpisodes" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="statut">Statut</label>
+                    <select id="statut">
+                        <option value="">Sélectionner</option>
+                        <option value="En cours">En cours</option>
+                        <option value="Terminé">Terminé</option>
+                        <option value="Prévu">Prévu</option>
+                        <option value="Annulé">Annulé</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="type">Type</label>
+                    <select id="type">
+                        <option value="">Sélectionner</option>
+                        <option value="TV">TV</option>
+                        <option value="Movie">Movie</option>
+                        <option value="OVA">OVA</option>
+                        <option value="ONA">ONA</option>
+                        <option value="Special">Special</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="source">Source</label>
+                    <select id="source">
+                        <option value="">Sélectionner</option>
+                        <option value="Manga">Manga</option>
+                        <option value="Light Novel">Light Novel</option>
+                        <option value="Visual Novel">Visual Novel</option>
+                        <option value="Game">Game</option>
+                        <option value="Original">Original</option>
+                        <option value="Web Manga">Web Manga</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="classification">Classification</label>
+                    <select id="classification">
+                        <option value="">Sélectionner</option>
+                        <option value="G">G - Tous publics</option>
+                        <option value="PG">PG - Accord parental souhaitable</option>
+                        <option value="PG-13">PG-13 - 13 ans et plus</option>
+                        <option value="R">R - 17 ans et plus</option>
+                        <option value="R+">R+ - Mature</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="duree">Durée par épisode</label>
+                    <input type="text" id="duree" placeholder="ex: 24 min">
+                </div>
+                
+                <div class="form-group">
+                    <label for="urlImage">URL de l'image</label>
+                    <input type="url" id="urlImage">
+                </div>
+                
+                <div class="form-group">
+                    <label for="noteMoyenne">Note moyenne</label>
+                    <input type="number" id="noteMoyenne" min="0" max="10" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="classement">Classement</label>
+                    <input type="number" id="classement" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="popularite">Popularité</label>
+                    <input type="number" id="popularite" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label><input type="checkbox" id="wishlist"> Ajouter à la wishlist (à voir plus tard)</label>
+                </div>
+                <div class="form-group">
+                    <label for="etatVisionnage">État de visionnage</label>
+                    <select id="etatVisionnage">
+                        <option value="WISHLIST">À voir plus tard</option>
+                        <option value="WATCHING">En cours</option>
+                        <option value="COMPLETED">Terminé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="avis">Avis</label>
+                    <textarea id="avis" rows="2" placeholder="Votre avis sur la série..."></textarea>
+                </div>
+                
+                <!-- Suppression du champ de sélection des seiyuus -->
+                <!-- Suppression du champ de sélection des studios -->
+                
+                <div class="form-group">
+                    <label for="genresSelect">Genres (sélectionner un ou plusieurs)</label>
+                    <select id="genresSelect" multiple>
+                        <option value="Action">Action</option>
+                        <option value="Aventure">Aventure</option>
+                        <option value="Comédie">Comédie</option>
+                        <option value="Drame">Drame</option>
+                        <option value="Fantastique">Fantastique</option>
+                        <option value="Horreur">Horreur</option>
+                        <option value="Mystère">Mystère</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Science-fiction">Science-fiction</option>
+                        <option value="Slice of Life">Slice of Life</option>
+                        <option value="Surnaturel">Surnaturel</option>
+                        <option value="Thriller">Thriller</option>
+                        <option value="Sport">Sport</option>
+                        <option value="Musical">Musical</option>
+                        <option value="Historique">Historique</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="primary">Sauvegarder</button>
+                    <button type="button" class="btn-secondary" onclick="fermerModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let animes = [];
+        let editingAnimeId = null;
+        
+        // Charger les animes via l'API
+        async function chargerAnimes() {
+            try {
+                const response = await fetch('/api/animes');
+                animes = await response.json();
+                afficherAnimes();
+            } catch (error) {
+                console.error('Erreur lors du chargement des animes:', error);
+                document.getElementById('animeGrid').innerHTML = '<p>Erreur lors du chargement des animes.</p>';
+            }
+        }
+        
+        function afficherAnimes() {
+            const watchlist = animes.filter(a => !a.wishlist);
+            const wishlist = animes.filter(a => a.wishlist);
+            const watchlistGrid = document.getElementById('watchlistGrid');
+            const wishlistGrid = document.getElementById('wishlistGrid');
+            if (watchlist.length === 0) {
+                watchlistGrid.innerHTML = '<p>Aucun anime dans la watchlist. <a href="#" onclick="ouvrirModalAjout()">Ajouter le premier anime</a></p>';
+            } else {
+                watchlistGrid.innerHTML = watchlist.map(anime => renderAnimeCard(anime)).join('');
+            }
+            if (wishlist.length === 0) {
+                wishlistGrid.innerHTML = '<p>Aucun anime dans la wishlist.</p>';
+            } else {
+                wishlistGrid.innerHTML = wishlist.map(anime => renderAnimeCard(anime)).join('');
+            }
+        }
+        function renderAnimeCard(anime) {
+            return `
+                <div class="anime-card">
+                    <div class="anime-card-image ${anime.urlImage ? '' : 'no-image'}">
+                        ${anime.urlImage ? 
+                            `<img src="${anime.urlImage}" alt="${anime.titre}" onerror="this.parentElement.innerHTML='<div>Image non disponible</div>'; this.parentElement.classList.add('no-image');">` : 
+                            '<div>Aucune image</div>'
+                        }
+                        ${anime.wishlist ? '<span title="Wishlist" style="position:absolute;top:8px;right:8px;font-size:1.5em;color:gold;">★</span>' : ''}
+                    </div>
+                    <div class="anime-card-content">
+                        <h3>${anime.titre}</h3>
+                        ${anime.synopsis ? `<p class="synopsis">${anime.synopsis.length > 120 ? anime.synopsis.substring(0, 120) + '...' : anime.synopsis}</p>` : ''}
+                        <p><strong>Année:</strong> ${anime.annee || 'Non spécifiée'}</p>
+                        <p><strong>Statut:</strong> ${anime.statut || 'Non spécifié'}</p>
+                        <p><strong>Type:</strong> ${anime.type || 'Non spécifié'}</p>
+                        <p><strong>Épisodes:</strong> ${anime.nombreEpisodes || 'Non spécifié'}</p>
+                        ${anime.saison ? `<p><strong>Saison:</strong> ${anime.saison}</p>` : ''}
+                        ${anime.source ? `<p><strong>Source:</strong> ${anime.source}</p>` : ''}
+                        ${anime.noteMoyenne ? `<p><strong>Note:</strong> ${anime.noteMoyenne}/10</p>` : ''}
+                        ${anime.duree ? `<p><strong>Durée:</strong> ${anime.duree}</p>` : ''}
+                        <p><strong>État:</strong> ${anime.etatVisionnage === 'WATCHING' ? 'En cours' : anime.etatVisionnage === 'COMPLETED' ? 'Terminé' : 'À voir plus tard'}</p>
+                        ${anime.avis ? `<p><strong>Avis:</strong> ${anime.avis}</p>` : ''}
+                        <div class="actions">
+                            <button onclick="modifierAnime(${anime.id})" class="btn-edit">Modifier</button>
+                            <button onclick="supprimerAnime(${anime.id})" class="btn-delete">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Suppression des variables, fonctions et appels JS liés à la sélection des seiyuus et studios
+        
+        function ouvrirModalAjout() {
+            editingAnimeId = null;
+            document.getElementById('modalTitle').textContent = 'Ajouter un anime';
+            document.getElementById('animeForm').reset();
+            document.getElementById('animeId').value = '';
+            document.getElementById('wishlist').checked = false;
+            document.getElementById('etatVisionnage').value = 'WISHLIST';
+            document.getElementById('avis').value = '';
+            document.getElementById('animeModal').classList.add('show');
+        }
+        
+        function modifierAnime(id) {
+            const anime = animes.find(a => a.id === id);
+            if (!anime) return;
+            
+            editingAnimeId = id;
+            document.getElementById('modalTitle').textContent = 'Modifier un anime';
+            
+            // Remplir le formulaire
+            document.getElementById('animeId').value = anime.id;
+            document.getElementById('titre').value = anime.titre || '';
+            document.getElementById('synopsis').value = anime.synopsis || '';
+            document.getElementById('annee').value = anime.annee || '';
+            document.getElementById('saison').value = anime.saison || '';
+            document.getElementById('nombreEpisodes').value = anime.nombreEpisodes || '';
+            document.getElementById('statut').value = anime.statut || '';
+            document.getElementById('type').value = anime.type || '';
+            document.getElementById('source').value = anime.source || '';
+            document.getElementById('classification').value = anime.classification || '';
+            document.getElementById('duree').value = anime.duree || '';
+            document.getElementById('urlImage').value = anime.urlImage || '';
+            document.getElementById('noteMoyenne').value = anime.noteMoyenne || '';
+            document.getElementById('classement').value = anime.classement || '';
+            document.getElementById('popularite').value = anime.popularite || '';
+            document.getElementById('wishlist').checked = anime.wishlist || false;
+            document.getElementById('etatVisionnage').value = anime.etatVisionnage || 'WISHLIST';
+            document.getElementById('avis').value = anime.avis || '';
+            
+            document.getElementById('animeModal').classList.add('show');
+        }
+        
+        function fermerModal() {
+            document.getElementById('animeModal').classList.remove('show');
+        }
+        
+        async function supprimerAnime(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cet anime ?')) return;
+            
+            try {
+                const response = await fetch(`/api/animes/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    await chargerAnimes();
+                    alert('Anime supprimé avec succès !');
+                } else {
+                    alert('Erreur lors de la suppression de l\'anime.');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la suppression de l\'anime.');
+            }
+        }
+        
+        // Gestion du formulaire
+        document.getElementById('animeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const anime = {
+                titre: document.getElementById('titre').value,
+                synopsis: document.getElementById('synopsis').value || null,
+                annee: document.getElementById('annee').value ? parseInt(document.getElementById('annee').value) : null,
+                saison: document.getElementById('saison').value || null,
+                nombreEpisodes: document.getElementById('nombreEpisodes').value ? parseInt(document.getElementById('nombreEpisodes').value) : null,
+                statut: document.getElementById('statut').value || null,
+                type: document.getElementById('type').value || null,
+                source: document.getElementById('source').value || null,
+                classification: document.getElementById('classification').value || null,
+                duree: document.getElementById('duree').value || null,
+                urlImage: document.getElementById('urlImage').value || null,
+                noteMoyenne: document.getElementById('noteMoyenne').value ? parseFloat(document.getElementById('noteMoyenne').value) : null,
+                classement: document.getElementById('classement').value ? parseInt(document.getElementById('classement').value) : null,
+                popularite: document.getElementById('popularite').value ? parseInt(document.getElementById('popularite').value) : null,
+                wishlist: document.getElementById('wishlist').checked,
+                etatVisionnage: document.getElementById('etatVisionnage').value,
+                avis: document.getElementById('avis').value || null,
+            };
+            
+            // On ne gère plus les seiyuus ni studios
+            
+            // Ajout des genres sélectionnés
+            const genres = Array.from(document.getElementById('genresSelect').selectedOptions).map(opt => opt.value);
+            if (genres.length > 0) anime.genres = genres;
+            
+            try {
+                let response;
+                if (editingAnimeId) {
+                    // Modification
+                    response = await fetch(`/api/animes/${editingAnimeId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(anime)
+                    });
+                } else {
+                    // Ajout
+                    response = await fetch('/api/animes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(anime)
+                    });
+                }
+                
+                if (response.ok) {
+                    await chargerAnimes();
+                    fermerModal();
+                    alert(editingAnimeId ? 'Anime modifié avec succès !' : 'Anime ajouté avec succès !');
+                } else {
+                    alert('Erreur lors de la sauvegarde de l\'anime.');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la sauvegarde de l\'anime.');
+            }
+        });
+        
+        // Fermer le modal en cliquant à l'extérieur
+        document.getElementById('animeModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                fermerModal();
+            }
+        });
+        
+        // Charger les animes au chargement de la page
+        document.addEventListener('DOMContentLoaded', chargerAnimes);
+    </script>
+    <style>
+.tags-list { margin-top: 8px; }
+.tag {
+  display: inline-block;
+  background: #333;
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px 2px 8px;
+  margin: 2px;
+  font-size: 0.95em;
+}
+.remove-tag {
+  cursor: pointer;
+  margin-left: 6px;
+  color: #ff8888;
+  font-weight: bold;
+}
+.remove-tag:hover { color: #ff2222; }
+</style>
+</body>
+</html> 

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Studios</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Gestionnaire d'Anime</h1>
+            <nav>
+                <a href="/dashboard">Animes</a>
+                <a href="/seiyuus">Seiyuus</a>
+                <a href="/studios">Studios</a>
+                <a href="/api/studios">API</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Gestion des Studios</h2>
+            <button class="primary" onclick="ouvrirModalAjout()">Ajouter un studio</button>
+        </div>
+        
+        <div class="search-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Rechercher un studio..." onkeyup="rechercherStudio()">
+                <select id="searchType" onchange="rechercherStudio()">
+                    <option value="nom">Nom</option>
+                    <option value="siege">Siège</option>
+                    <option value="fondateur">Fondateur</option>
+                </select>
+            </div>
+            <div class="filter-buttons">
+                <button onclick="afficherTousLesStudios()">Tous</button>
+                <button onclick="afficherStudiosActifs()">Actifs</button>
+                <button onclick="afficherStudiosPlusProductifs()">Plus productifs</button>
+                <button onclick="filtrerParStatut('ACTIF')">En activité</button>
+                <button onclick="filtrerParStatut('FERME')">Fermés</button>
+            </div>
+        </div>
+        
+        <div class="studio-grid" id="studioGrid">
+            <p>Chargement des studios...</p>
+        </div>
+        
+        <!-- Section Animes par Studio -->
+        <div class="studio-animes-section">
+            <h3>Animes par Studio</h3>
+            <div class="studio-select-container">
+                <select id="studioSelectAnimes" onchange="afficherAnimesParStudio()">
+                    <option value="">Sélectionner un studio</option>
+                </select>
+            </div>
+            <div id="studioAnimesResult"></div>
+        </div>
+    </main>
+
+    <!-- Modal pour ajouter/modifier un studio -->
+    <div id="studioModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Ajouter un studio</h3>
+                <button class="close" onclick="fermerModal()">&times;</button>
+            </div>
+            <form id="studioForm">
+                <input type="hidden" id="studioId">
+                
+                <div class="form-group">
+                    <label for="nom">Nom *</label>
+                    <input type="text" id="nom" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dateFondation">Date de fondation</label>
+                    <input type="date" id="dateFondation">
+                </div>
+                
+                <div class="form-group">
+                    <label for="fondateur">Fondateur</label>
+                    <input type="text" id="fondateur">
+                </div>
+                
+                <div class="form-group">
+                    <label for="siege">Siège social</label>
+                    <input type="text" id="siege">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="statut">Statut</label>
+                    <select id="statut">
+                        <option value="">Sélectionner</option>
+                        <option value="ACTIF">Actif</option>
+                        <option value="FERME">Fermé</option>
+                        <option value="RACHETE">Racheté</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="siteWeb">Site web</label>
+                    <input type="url" id="siteWeb">
+                </div>
+                
+                <div class="form-group">
+                    <label for="urlImage">URL de l'image</label>
+                    <input type="url" id="urlImage">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="primary">Sauvegarder</button>
+                    <button type="button" class="btn-secondary" onclick="fermerModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let studios = [];
+        let editingStudioId = null;
+        
+        // Charger les studios via l'API
+        async function chargerStudios() {
+            try {
+                const response = await fetch('/api/studios');
+                studios = await response.json();
+                afficherStudios();
+                remplirSelectStudio();
+            } catch (error) {
+                console.error('Erreur lors du chargement des studios:', error);
+                document.getElementById('studioGrid').innerHTML = '<p>Erreur lors du chargement des studios.</p>';
+            }
+        }
+        
+        function afficherStudios(studiosAfficher = studios) {
+            const grid = document.getElementById('studioGrid');
+            
+            if (studiosAfficher.length === 0) {
+                grid.innerHTML = '<p>Aucun studio trouvé. <a href="#" onclick="ouvrirModalAjout()">Ajouter le premier studio</a></p>';
+                return;
+            }
+            
+            grid.innerHTML = studiosAfficher.map(studio => `
+                <div class="anime-card">
+                    <div class="anime-card-image ${studio.urlImage ? '' : 'no-image'}">
+                        ${studio.urlImage ? 
+                            `<img src="${studio.urlImage}" alt="${studio.nom}" onerror="this.parentElement.innerHTML='<div>Image non disponible</div>'; this.parentElement.classList.add('no-image');">` : 
+                            '<div>Aucune image</div>'
+                        }
+                    </div>
+                    <div class="anime-card-content">
+                        <h3>${studio.nom}</h3>
+                        ${studio.dateFondation ? `<p><strong>Fondé le:</strong> ${new Date(studio.dateFondation).toLocaleDateString('fr-FR')}</p>` : ''}
+                        ${studio.fondateur ? `<p><strong>Fondateur:</strong> ${studio.fondateur}</p>` : ''}
+                        ${studio.siege ? `<p><strong>Siège:</strong> ${studio.siege}</p>` : ''}
+                        <p><strong>Statut:</strong> <span class="status-${studio.statut?.toLowerCase() || 'unknown'}">${studio.statut || 'Non spécifié'}</span></p>
+                        ${studio.description ? `<p class="synopsis">${studio.description.length > 100 ? studio.description.substring(0, 100) + '...' : studio.description}</p>` : ''}
+                        ${studio.siteWeb ? `<p><a href="${studio.siteWeb}" target="_blank">Site officiel</a></p>` : ''}
+                        <div class="actions">
+                            <button onclick="voirAnimesStudio(${studio.id})" class="btn-secondary">Animes</button>
+                            <button onclick="modifierStudio(${studio.id})" class="btn-edit">Modifier</button>
+                            <button onclick="supprimerStudio(${studio.id})" class="btn-delete">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function remplirSelectStudio() {
+            const select = document.getElementById('studioSelectAnimes');
+            const options = studios.map(s => `<option value="${s.id}">${s.nom}</option>`).join('');
+            select.innerHTML = '<option value="">Sélectionner un studio</option>' + options;
+        }
+        
+        async function rechercherStudio() {
+            const terme = document.getElementById('searchInput').value.trim();
+            const type = document.getElementById('searchType').value;
+            
+            if (!terme) {
+                afficherStudios();
+                return;
+            }
+            
+            try {
+                let url;
+                switch (type) {
+                    case 'nom':
+                        url = `/api/studios/recherche?nom=${encodeURIComponent(terme)}`;
+                        break;
+                    case 'siege':
+                        url = `/api/studios/siege/${encodeURIComponent(terme)}`;
+                        break;
+                    case 'fondateur':
+                        url = `/api/studios/fondateur/${encodeURIComponent(terme)}`;
+                        break;
+                }
+                
+                const response = await fetch(url);
+                const resultats = await response.json();
+                afficherStudios(resultats);
+            } catch (error) {
+                console.error('Erreur lors de la recherche:', error);
+            }
+        }
+        
+        async function afficherStudiosActifs() {
+            try {
+                const response = await fetch('/api/studios/actifs');
+                const studiosActifs = await response.json();
+                afficherStudios(studiosActifs);
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+        
+        async function afficherStudiosPlusProductifs() {
+            try {
+                const response = await fetch('/api/studios/plus-productifs');
+                const studiosProductifs = await response.json();
+                afficherStudios(studiosProductifs);
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+        
+        async function filtrerParStatut(statut) {
+            try {
+                const response = await fetch(`/api/studios/statut/${statut}`);
+                const studiosStatut = await response.json();
+                afficherStudios(studiosStatut);
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+        
+        function afficherTousLesStudios() {
+            document.getElementById('searchInput').value = '';
+            afficherStudios();
+        }
+        
+        async function voirAnimesStudio(studioId) {
+            try {
+                const response = await fetch(`/api/animes/studio/${studioId}`);
+                const animes = await response.json();
+                
+                if (animes.length === 0) {
+                    alert('Aucun anime trouvé pour ce studio.');
+                    return;
+                }
+                
+                const titres = animes.map(a => `${a.titre} (${a.annee || 'N/A'})`).join('\n');
+                alert(`Animes produits:\n${titres}`);
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la récupération des animes.');
+            }
+        }
+        
+        async function afficherAnimesParStudio() {
+            const studioId = document.getElementById('studioSelectAnimes').value;
+            
+            if (!studioId) {
+                document.getElementById('studioAnimesResult').innerHTML = '';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/animes/studio/${studioId}`);
+                const animes = await response.json();
+                
+                const studio = studios.find(s => s.id == studioId);
+                const resultDiv = document.getElementById('studioAnimesResult');
+                
+                if (animes.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="studio-animes-result">
+                            <h4>${studio.nom}</h4>
+                            <p>Aucun anime trouvé pour ce studio.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="studio-animes-result">
+                        <h4>${studio.nom} - ${animes.length} anime(s)</h4>
+                        <div class="animes-list">
+                            ${animes.map(anime => `
+                                <div class="anime-item">
+                                    <strong>${anime.titre}</strong> (${anime.annee || 'N/A'}) - ${anime.statut || 'N/A'}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.getElementById('studioAnimesResult').innerHTML = '<p>Erreur lors du chargement des animes.</p>';
+            }
+        }
+        
+        function ouvrirModalAjout() {
+            editingStudioId = null;
+            document.getElementById('modalTitle').textContent = 'Ajouter un studio';
+            document.getElementById('studioForm').reset();
+            document.getElementById('studioId').value = '';
+            document.getElementById('studioModal').classList.add('show');
+        }
+        
+        function modifierStudio(id) {
+            const studio = studios.find(s => s.id === id);
+            if (!studio) return;
+            
+            editingStudioId = id;
+            document.getElementById('modalTitle').textContent = 'Modifier un studio';
+            
+            // Remplir le formulaire
+            document.getElementById('studioId').value = studio.id;
+            document.getElementById('nom').value = studio.nom || '';
+            document.getElementById('dateFondation').value = studio.dateFondation || '';
+            document.getElementById('fondateur').value = studio.fondateur || '';
+            document.getElementById('siege').value = studio.siege || '';
+            document.getElementById('description').value = studio.description || '';
+            document.getElementById('statut').value = studio.statut || '';
+            document.getElementById('siteWeb').value = studio.siteWeb || '';
+            document.getElementById('urlImage').value = studio.urlImage || '';
+            
+            document.getElementById('studioModal').classList.add('show');
+        }
+        
+        function fermerModal() {
+            document.getElementById('studioModal').classList.remove('show');
+        }
+        
+        async function supprimerStudio(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce studio ?')) return;
+            
+            try {
+                const response = await fetch(`/api/studios/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    await chargerStudios();
+                    alert('Studio supprimé avec succès !');
+                } else {
+                    alert('Erreur lors de la suppression du studio.');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la suppression du studio.');
+            }
+        }
+        
+        // Gestion du formulaire
+        document.getElementById('studioForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studio = {
+                nom: document.getElementById('nom').value,
+                dateFondation: document.getElementById('dateFondation').value || null,
+                fondateur: document.getElementById('fondateur').value || null,
+                siege: document.getElementById('siege').value || null,
+                description: document.getElementById('description').value || null,
+                statut: document.getElementById('statut').value || null,
+                siteWeb: document.getElementById('siteWeb').value || null,
+                urlImage: document.getElementById('urlImage').value || null
+            };
+            
+            try {
+                let response;
+                if (editingStudioId) {
+                    // Modification
+                    response = await fetch(`/api/studios/${editingStudioId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(studio)
+                    });
+                } else {
+                    // Ajout
+                    response = await fetch('/api/studios', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(studio)
+                    });
+                }
+                
+                if (response.ok) {
+                    await chargerStudios();
+                    fermerModal();
+                    alert(editingStudioId ? 'Studio modifié avec succès !' : 'Studio ajouté avec succès !');
+                } else {
+                    alert('Erreur lors de la sauvegarde du studio.');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la sauvegarde du studio.');
+            }
+        });
+        
+        // Fermer le modal en cliquant à l'extérieur
+        document.getElementById('studioModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                fermerModal();
+            }
+        });
+        
+        // Charger les studios au chargement de la page
+        document.addEventListener('DOMContentLoaded', chargerStudios);
+    </script>
+</body>
+</html> 

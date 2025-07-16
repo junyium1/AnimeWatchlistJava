@@ -1,0 +1,14 @@
+services:
+  api:
+    build: .
+    ports:
+      - "26550:26550"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    container_name: anime-watchlist-api
+    restart: unless-stopped
+    volumes:
+      - anime_data:/app/data
+
+volumes:
+  anime_data: 
