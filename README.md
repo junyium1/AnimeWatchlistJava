@@ -10,11 +10,11 @@
 
 1. **Construire et démarrer les conteneurs** :
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
    Cette commande va :
    - Construire l’image de l’application Java (Spring Boot)
-   - Lancer l’API et la base de données (si configurée dans le docker-compose)
+   - Lancer l’API et la base de données (si configurée dans le docker compose)
    - Exposer l’API sur le port défini (par défaut : `http://localhost:26550`)
 
 2. **Vérifier que l’API est en ligne** :
@@ -27,11 +27,11 @@
 
 - **Arrêter les conteneurs** :
   ```bash
-  docker-compose down
+  docker compose down
   ```
 - **Rebuild complet (si vous modifiez le code)** :
   ```bash
-  docker-compose up --build
+  docker compose up --build
   ```
 
 ---
