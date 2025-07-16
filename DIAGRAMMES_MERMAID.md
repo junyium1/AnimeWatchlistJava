@@ -19,8 +19,6 @@ classDiagram
         +Boolean wishlist
         +EtatVisionnage etatVisionnage
         +String avis
-        +List~Seiyuu~ seiyuus
-        +List~Studio~ studios
         +List~String~ genres
         +String urlImage
         +Double noteMoyenne
@@ -28,7 +26,10 @@ classDiagram
         +Integer popularite
         +Integer nombreMembres
         +Integer nombreFavoris
+        +List~Seiyuu~ seiyuus
+        +List~Studio~ studios
     }
+    
     class Seiyuu {
         +Long id
         +String nom
@@ -41,7 +42,9 @@ classDiagram
         +String agence
         +String site
         +List~Anime~ animes
+        +getNomComplet() String
     }
+    
     class Studio {
         +Long id
         +String nom
@@ -54,11 +57,170 @@ classDiagram
         +String statut
         +List~Anime~ animes
     }
+    
+    class AnimeDTO {
+        +String titre
+        +String synopsis
+        +String genre
+        +Integer annee
+        +String saison
+        +Integer nombreEpisodes
+        +String statut
+        +String type
+        +String source
+        +String classification
+        +String duree
+        +List~Long~ seiyuuIds
+        +List~Seiyuu~ nouveauxSeiyuus
+        +List~Long~ studioIds
+        +List~Studio~ nouveauxStudios
+        +List~String~ genres
+        +String urlImage
+        +Double noteMoyenne
+        +Integer classement
+        +Integer popularite
+        +Integer nombreMembres
+        +Integer nombreFavoris
+        +Boolean wishlist
+        +String etatVisionnage
+        +String avis
+    }
+    
+    class EtatVisionnage {
+        <<enumeration>>
+        WISHLIST
+        WATCHING
+        COMPLETED
+    }
+    
+    class ControleurAnime {
+        +ServiceAnime serviceAnime
+        +ServiceSeiyuu serviceSeiyuu
+        +ServiceStudio serviceStudio
+        +obtenirTousLesAnimes() List~Anime~
+        +obtenirAnimeParId(Long) ResponseEntity~Anime~
+        +creerAnime(AnimeDTO) Anime
+        +mettreAJourAnime(Long, Anime) ResponseEntity~Anime~
+        +supprimerAnime(Long) ResponseEntity~Void~
+        +rechercherAnimes(String) List~Anime~
+    }
+    
+    class ServiceAnime {
+        +AnimeRepository animeRepository
+        +obtenirTousLesAnimes() List~Anime~
+        +obtenirAnimeParId(Long) Optional~Anime~
+        +sauvegarderAnime(Anime) Anime
+        +supprimerAnime(Long) void
+        +existeAnime(Long) Boolean
+        +rechercherAnimesParTitre(String) List~Anime~
+    }
+    
+    class AnimeRepository {
+        <<interface>>
+        +findAll() List~Anime~
+        +findById(Long) Optional~Anime~
+        +save(Anime) Anime
+        +deleteById(Long) void
+        +findByTitreContainingIgnoreCase(String) List~Anime~
+        +findByAnnee(Integer) List~Anime~
+        +findByStatut(String) List~Anime~
+        +findByType(String) List~Anime~
+        +findByGenre(String) List~Anime~
+        +findByStudioId(Long) List~Anime~
+        +findBySeiyuuId(Long) List~Anime~
+    }
+    
+    class ControleurSeiyuu {
+        +ServiceSeiyuu serviceSeiyuu
+        +obtenirTousLesSeiyuus() List~Seiyuu~
+        +obtenirSeiyuuParId(Long) ResponseEntity~Seiyuu~
+        +creerSeiyuu(Seiyuu) Seiyuu
+        +mettreAJourSeiyuu(Long, Seiyuu) ResponseEntity~Seiyuu~
+        +supprimerSeiyuu(Long) ResponseEntity~Void~
+    }
+    
+    class ServiceSeiyuu {
+        +SeiyuuRepository seiyuuRepository
+        +obtenirTousLesSeiyuus() List~Seiyuu~
+        +obtenirSeiyuuParId(Long) Optional~Seiyuu~
+        +sauvegarderSeiyuu(Seiyuu) Seiyuu
+        +supprimerSeiyuu(Long) void
+    }
+    
+    class SeiyuuRepository {
+        <<interface>>
+        +findAll() List~Seiyuu~
+        +findById(Long) Optional~Seiyuu~
+        +save(Seiyuu) Seiyuu
+        +deleteById(Long) void
+        +findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(String, String) List~Seiyuu~
+        +findByAgenceContainingIgnoreCase(String) List~Seiyuu~
+    }
+    
+    class ControleurStudio {
+        +ServiceStudio serviceStudio
+        +obtenirTousLesStudios() List~Studio~
+        +obtenirStudioParId(Long) ResponseEntity~Studio~
+        +creerStudio(Studio) Studio
+        +mettreAJourStudio(Long, Studio) ResponseEntity~Studio~
+        +supprimerStudio(Long) ResponseEntity~Void~
+    }
+    
+    class ServiceStudio {
+        +StudioRepository studioRepository
+        +obtenirTousLesStudios() List~Studio~
+        +obtenirStudioParId(Long) Optional~Studio~
+        +sauvegarderStudio(Studio) Studio
+        +supprimerStudio(Long) void
+    }
+    
+    class StudioRepository {
+        <<interface>>
+        +findAll() List~Studio~
+        +findById(Long) Optional~Studio~
+        +save(Studio) Studio
+        +deleteById(Long) void
+        +findByNomContainingIgnoreCase(String) List~Studio~
+        +findByStatut(String) List~Studio~
+    }
+    
+    class ControleurWeb {
+        +accueil() String
+        +dashboard() String
+        +seiyuus() String
+        +studios() String
+    }
+    
+    %% Relations entre entités
     Anime "*" --o "*" Seiyuu : "joué par"
     Anime "*" --o "*" Studio : "produit par"
+    Anime --o EtatVisionnage : "a un état"
+    
+    %% Relations avec DTO
+    ControleurAnime ..> AnimeDTO : "utilise"
+    AnimeDTO --o Anime : "crée/modifie"
+    
+    %% Relations de couches
+    ControleurAnime --> ServiceAnime : "utilise"
+    ControleurSeiyuu --> ServiceSeiyuu : "utilise"
+    ControleurStudio --> ServiceStudio : "utilise"
+    
+    ServiceAnime --> AnimeRepository : "utilise"
+    ServiceSeiyuu --> SeiyuuRepository : "utilise"
+    ServiceStudio --> StudioRepository : "utilise"
+    
+    %% Relations avec entités
+    AnimeRepository --> Anime : "gère"
+    SeiyuuRepository --> Seiyuu : "gère"
+    StudioRepository --> Studio : "gère"
+    
+    %% Relations web
+    ControleurWeb --> Anime : "affiche"
+    ControleurWeb --> Seiyuu : "affiche"
+    ControleurWeb --> Studio : "affiche"
 ```
 
-## Diagramme de séquence (exhaustif)
+## Diagramme de séquence 
 ```mermaid
 sequenceDiagram
     participant U as Utilisateur
